@@ -527,8 +527,8 @@ module CacheStoreBehavior
   def test_crazy_key_characters
     crazy_key = "#/:*(<+=> )&$%@?;'\"\'`~-"
     assert @cache.write(crazy_key, "1", raw: true)
-    assert_equal "1", @cache.read(crazy_key)
-    assert_equal "1", @cache.fetch(crazy_key)
+    assert_equal "1", @cache.read(crazy_key, raw: true)
+    assert_equal "1", @cache.fetch(crazy_key, raw: true)
     assert @cache.delete(crazy_key)
     assert_equal "2", @cache.fetch(crazy_key, raw: true) { "2" }
     assert_equal 3, @cache.increment(crazy_key)
@@ -553,7 +553,7 @@ module CacheStoreBehavior
       @events << ActiveSupport::Notifications::Event.new(*args)
     end
     assert @cache.write(key, "1", raw: true)
-    assert @cache.fetch(key) {}
+    assert @cache.fetch(key, raw: true) {}
     assert_equal 1, @events.length
     assert_equal "cache_read.active_support", @events[0].name
     assert_equal :fetch, @events[0].payload[:super_operation]
@@ -587,8 +587,8 @@ module EncodedKeyCacheBehavior
     define_method "test_#{encoding.name.underscore}_encoded_values" do
       key = "foo".force_encoding(encoding)
       assert @cache.write(key, "1", raw: true)
-      assert_equal "1", @cache.read(key)
-      assert_equal "1", @cache.fetch(key)
+      assert_equal "1", @cache.read(key, raw: true)
+      assert_equal "1", @cache.fetch(key, raw: true)
       assert @cache.delete(key)
       assert_equal "2", @cache.fetch(key, raw: true) { "2" }
       assert_equal 3, @cache.increment(key)
@@ -599,8 +599,8 @@ module EncodedKeyCacheBehavior
   def test_common_utf8_values
     key = "\xC3\xBCmlaut".force_encoding(Encoding::UTF_8)
     assert @cache.write(key, "1", raw: true)
-    assert_equal "1", @cache.read(key)
-    assert_equal "1", @cache.fetch(key)
+    assert_equal "1", @cache.read(key, raw: true)
+    assert_equal "1", @cache.fetch(key, raw: true)
     assert @cache.delete(key)
     assert_equal "2", @cache.fetch(key, raw: true) { "2" }
     assert_equal 3, @cache.increment(key)
@@ -631,21 +631,21 @@ end
 module CacheIncrementDecrementBehavior
   def test_increment
     @cache.write("foo", 1, raw: true)
-    assert_equal 1, @cache.read("foo").to_i
+    assert_equal 1, @cache.read("foo", raw: true).to_i
     assert_equal 2, @cache.increment("foo")
-    assert_equal 2, @cache.read("foo").to_i
+    assert_equal 2, @cache.read("foo", raw: true).to_i
     assert_equal 3, @cache.increment("foo")
-    assert_equal 3, @cache.read("foo").to_i
+    assert_equal 3, @cache.read("foo", raw: true).to_i
     assert_nil @cache.increment("bar")
   end
 
   def test_decrement
     @cache.write("foo", 3, raw: true)
-    assert_equal 3, @cache.read("foo").to_i
+    assert_equal 3, @cache.read("foo", raw: true).to_i
     assert_equal 2, @cache.decrement("foo")
-    assert_equal 2, @cache.read("foo").to_i
+    assert_equal 2, @cache.read("foo", raw: true).to_i
     assert_equal 1, @cache.decrement("foo")
-    assert_equal 1, @cache.read("foo").to_i
+    assert_equal 1, @cache.read("foo", raw: true).to_i
     assert_nil @cache.decrement("bar")
   end
 end
@@ -729,7 +729,7 @@ module LocalCacheBehavior
       @cache.write("foo", 1, raw: true)
       @peek.write("foo", 2, raw: true)
       @cache.increment("foo")
-      assert_equal 3, @cache.read("foo")
+      assert_equal 3, @cache.read("foo", raw: true)
     end
   end
 
@@ -738,7 +738,7 @@ module LocalCacheBehavior
       @cache.write("foo", 1, raw: true)
       @peek.write("foo", 3, raw: true)
       @cache.decrement("foo")
-      assert_equal 2, @cache.read("foo")
+      assert_equal 2, @cache.read("foo", raw: true)
     end
   end
 
@@ -1060,7 +1060,7 @@ class MemCacheStoreTest < ActiveSupport::TestCase
     cache = ActiveSupport::Cache.lookup_store(:mem_cache_store, raw: true)
     cache.clear
     cache.write("foo", Marshal.dump([]))
-    assert_equal [], cache.read("foo")
+    assert_equal Marshal.dump([]), cache.read("foo")
   end
 
   def test_local_cache_raw_values
@@ -1077,7 +1077,7 @@ class MemCacheStoreTest < ActiveSupport::TestCase
     cache.clear
     cache.with_local_cache do
       cache.write("foo", Marshal.dump([]))
-      assert_equal [], cache.read("foo")
+      assert_equal Marshal.dump([]), cache.read("foo")
     end
   end
 
